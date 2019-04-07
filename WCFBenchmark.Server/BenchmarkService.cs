@@ -14,7 +14,7 @@ namespace WCFBenchmark.Server
     {
         public BenchmarkResponse Call(BenchmarkRequest benchmarkRequest)
         {
-            Thread.Sleep(10);
+       //     Thread.Sleep(2);
             return new BenchmarkResponse { ProcessEndTime = DateTime.UtcNow, RequestId = benchmarkRequest.RequestId };
         }
     }

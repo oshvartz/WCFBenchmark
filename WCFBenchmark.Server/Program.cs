@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.ServiceModel;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace WCFBenchmark.Server
@@ -13,6 +14,8 @@ namespace WCFBenchmark.Server
     {
         static void Main(string[] args)
         {
+            // Workaround the CLR Threadpool issue
+            ThreadPoolTimeoutWorkaround.DoWorkaround();
             IContainer container = CreateContainer();
 
             var benchmarkService = new ServiceHost(typeof(BenchmarkService));
@@ -34,6 +37,30 @@ namespace WCFBenchmark.Server
             // builder.RegisterType<SomeType>().As<IService>();
 
             return builder.Build();
+        }
+    }
+
+    static class ThreadPoolTimeoutWorkaround
+    {
+        static ManualResetEvent s_dummyEvent;
+        static RegisteredWaitHandle s_registeredWait;
+
+        public static void DoWorkaround()
+        {
+            // Create an event that is never set
+            s_dummyEvent = new ManualResetEvent(false);
+
+            // Register a wait for the event, with a periodic timeout. This causes callbacks
+            // to be queued to an IOCP thread, keeping it alive
+            s_registeredWait = ThreadPool.RegisterWaitForSingleObject(
+                s_dummyEvent,
+                (a, b) =>
+                {
+                // Do nothing
+            },
+                null,
+                1000,
+                false);
         }
     }
 }
